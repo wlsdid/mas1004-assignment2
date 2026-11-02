@@ -1,0 +1,29 @@
+# Everything this assignment needs, for uv. On your own computer, run every
+# command through uv and it installs exactly these into .venv:
+#   uv run python src/official.py --quick
+# Do not change the versions here. torch and torchvision are the versions the
+# grader trains Track A recipes with.
+[project]
+name = "mas1004-assignment2"
+version = "1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "numpy>=1.26,<2.3",
+    "pillow>=10.0",
+    "torch==2.6.0",
+    "torchvision==0.21.0",
+    "onnx==1.19.1",          # writing the model you hand in
+    "onnxscript>=0.2",
+    "onnxruntime==1.23.2",   # running it the way the grader does
+]
+
+[tool.uv]
+# Use a Python that uv downloads itself, never one already on the computer.
+python-preference = "only-managed"
+# PyTorch has no packages for Intel Macs or for Windows on ARM processors.
+# On those computers uv stops with an error, and you use Colab instead.
+environments = [
+    "sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "sys_platform == 'win32' and platform_machine != 'ARM64'",
+    "sys_platform == 'linux'",
+]

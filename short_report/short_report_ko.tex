@@ -1,0 +1,88 @@
+% MAS1004 과제 2: 짧은 보고서, 한국어 양식.
+%
+% 이 과제를 하며 배운 것을 자유롭게 작성하면 됩니다.
+%   - 무엇을 해 봤고, 왜 그랬는지
+%   - 과제가 어떻게 진행되었는지
+%   - 무엇을 배웠는지
+%
+%  이 리포트는 본문을 한쪽으로 작성하며, LLM을 쓰지 않고 직접 작성합니다.
+% 본문 뒤에 그림을 세 쪽까지 더 붙일 수 있습니다.
+% XeLaTeX로 컴파일하면 됩니다.  (Overleaf: Menu, Compiler, XeLaTeX).
+
+\documentclass[11pt]{article}
+\usepackage[onepage,ko]{mas1004}
+
+\reporttitle{과제 2: 짧은 보고서}
+\studentname{이름}
+\studentid{학번}
+
+\begin{document}
+\makeheader
+
+% 본문, 한 쪽. 아래 안내에 필요한 LaTeX 사용법이 있습니다.
+% 읽은 뒤 지우고, 그 자리에 보고서를 작성하면 됩니다.
+
+\section*{LaTeX}
+
+이 파일은 LaTeX로 작성되어 있습니다. LaTeX 파일은 글과 몇 가지 명령이 들어 있는
+텍스트 파일이고, 명령은 \verb|\section*|처럼 역슬래시로 시작합니다. 한국어
+키보드에서는 ₩ 키가 역슬래시입니다. Overleaf에서는 왼쪽에 파일이, 오른쪽에 PDF가
+보입니다. Recompile 버튼을 누르면 Overleaf가 파일을 읽어 PDF를 다시 만듭니다.
+
+이 쪽에 보이는 내용은 모두 왼쪽 파일에서 나온 것입니다. 왼쪽과 오른쪽을 견주어
+보면 각 부분을 어떻게 쓰는지 알 수 있습니다. 다 읽었으면 이 안내를
+\verb|\section*{LaTeX}|부터 \verb|\figurepages| 바로 앞 줄까지 지우고, 그 자리에
+보고서를 작성하면 됩니다.
+
+\section*{글 쓰기}
+
+\begin{itemize}
+  \item 문장은 그대로 입력하면 됩니다. 한 문단 안에서 줄을 바꾼 것은 결과에
+    나타나지 않습니다. 줄은 LaTeX가 알아서 나눕니다.
+  \item 빈 줄을 하나 넣으면 새 문단이 시작됩니다.
+  \item \verb|\section*{소제목}|은 이 쪽에 있는 것과 같은 소제목을 만듭니다.
+    소제목은 쓰지 않아도 됩니다.
+  \item 이런 목록은 \verb|\begin{itemize}|로 시작하고, 항목마다 앞에
+    \verb|\item|을 쓰고, \verb|\end{itemize}|로 끝냅니다.
+\end{itemize}
+
+\section*{특수 문자}
+
+\verb|%|는 주석을 시작합니다. 그 줄에서 \verb|%| 뒤에 있는 내용은 PDF에 나오지
+않습니다. 파일 맨 위의 안내도 주석입니다. \verb|% $ & # _ { }|를 글자로 쓰려면
+앞에 역슬래시를 붙입니다: \verb|\%|, \verb|\$|, \verb|\&|, \verb|\#|,
+\verb|\_|, \verb|\{|, \verb|\}|.
+
+\section*{이름과 그림}
+
+\begin{itemize}
+  \item 파일 위쪽의 \verb|\studentname{...}|과 \verb|\studentid{...}|에 이름과
+    학번을 씁니다.
+  \item 그림은 \verb|\figurepages| 뒤에, 세 쪽까지 넣을 수 있습니다. 왼쪽 파일
+    목록 위의 Upload 버튼으로 그림 파일을 올립니다. 그리고 \verb|\figurepages|
+    뒤에 있는 예시 그림에서 \verb|example-image-a| 자리에 그 파일 이름을 씁니다.
+    \verb|width=0.7\linewidth|는 그림의 폭을 본문 폭의 0.7배로 정합니다.
+  \item 그림을 더 넣으려면 \verb|\begin{figure}|부터 \verb|\end{figure}|까지를
+    복사해 씁니다. 그림이 없으면 예시를 지웁니다.
+\end{itemize}
+
+\section*{오류가 날 때}
+
+\begin{itemize}
+  \item Recompile 뒤에 오류가 나오면 메시지에 있는 줄 번호를 봅니다. 대개
+    \verb|}|가 빠졌거나, 위의 특수 문자 앞에 역슬래시가 없는 경우입니다.
+  \item 본문이 한 쪽을 넘으면 본문 끝에 빨간 글씨가 나옵니다. 그림이 세 쪽을
+    넘을 때도 빨간 글씨가 나옵니다.
+\end{itemize}
+
+\figurepages
+
+% 그림, 세 쪽까지.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.7\linewidth]{example-image-a}
+  \caption{그림 설명.}
+\end{figure}
+
+\end{document}

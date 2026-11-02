@@ -1,0 +1,90 @@
+% MAS1004 Assignment 2: long report.
+%
+% You fill this in with your agent, in your repository. AGENTS.md tells the
+% agent how. Red text in the PDF is what still has to be replaced.
+%
+% - Pictures go in figures/. Copy them from results/, which is not in git.
+% - Outputs go in outputs/: copy experiments.csv, LOG.md and the outputs of
+%   check_submission.py and curate.py count here. \outputfile{outputs/...}
+%   prints a file exactly as it is. Every number in this report has to come
+%   from such an output.
+%
+% To make the PDF: compress this folder into a zip, and on Overleaf choose
+% New Project, Upload Project. Set Menu, Compiler to XeLaTeX, and Recompile.
+
+\documentclass[11pt]{article}
+\usepackage{mas1004}
+
+\reporttitle{Assignment 2: Long report}
+\studentname{Your name}
+\studentid{Your student ID}
+
+\begin{document}
+\makeheader
+
+\fillin{Your leaderboard nickname, and the tags of your last Track A and Track B releases.}
+
+% The sections below are a suggestion. Change, merge or add sections as you
+% like; README.md, "The long report", says what a reader should be able to see.
+
+% ---------------------------------------------------------------------------
+\section*{Track A}
+
+\begin{center}\footnotesize
+\begin{tabular}{lp{0.6\linewidth}r}
+\toprule
+tag & what changed from the run before & validation \\
+\midrule
+\multicolumn{3}{l}{\fillin{one row per recipe, with the numbers from experiments.csv}} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\fillin{What you tried, why, and what you think each result means.}
+
+\fillin{Your final recipe and selection, and their leaderboard score next to
+their validation score.}
+
+% ---------------------------------------------------------------------------
+\section*{Decisions you made from photos}
+
+\picturefile{figures/mistakes_baseline_seed0_busan_00.png}
+
+\fillin{What you looked at, what you saw in common, and the rule you wrote
+before acting.}
+
+\fillin{What you changed (the output of curate.py count, or the photos you
+added), and the scores before and after.}
+
+\fillin{The requests you gave your agent for these decisions.}
+
+% ---------------------------------------------------------------------------
+\section*{Track B}
+
+\fillin{What you tried, one step at a time, and the validation score after
+each step.}
+
+\fillin{How you collected any extra photos.}
+
+\fillin{Your validation score next to your leaderboard score, and why they
+might disagree.}
+
+\subsection*{Your submission, as the grader sees it}
+\outputfile{outputs/check_submission.txt}
+
+% ---------------------------------------------------------------------------
+\section*{What made the difference}
+
+\fillin{Which change helped most and which least, in both tracks, with your
+numbers.}
+
+\fillin{What you would do next with one more week.}
+
+% ---------------------------------------------------------------------------
+\section*{All runs}
+\outputfile{outputs/experiments.csv}
+
+\section*{Lab notebook}
+\outputfile{outputs/LOG.md}
+
+\end{document}

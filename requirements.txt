@@ -1,0 +1,7 @@
+# The same versions as uv.lock, for pip. The Colab notebook installs them with its own pip line.
+# On your own computer, use uv (pyproject.toml and uv.lock).
+torch==2.6.0
+torchvision==0.21.0
+onnx==1.19.1
+onnxscript>=0.2
+onnxruntime==1.23.2

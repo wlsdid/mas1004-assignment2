@@ -1,0 +1,149 @@
+% Report style for MAS1004 Data & AI, 2026 Fall.
+% The same file is in short_report/ and long_report/. Do not change it.
+%
+% Compile with XeLaTeX. On Overleaf: Menu, Settings, Compiler, XeLaTeX.
+%
+% Options
+%   onepage   one page of text, then at most three pages of figures after
+%             \figurepages; a red note appears if either runs over
+%   ko        Korean labels in the header and in figure captions
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{mas1004}[2026/10/01 MAS1004 report style]
+
+\newif\ifmas@onepage
+\newif\ifmas@ko
+\DeclareOption{onepage}{\mas@onepagetrue}
+\DeclareOption{ko}{\mas@kotrue}
+\ProcessOptions\relax
+
+\RequirePackage{iftex}
+\ifXeTeX\else
+  \PackageError{mas1004}{This template needs XeLaTeX. On Overleaf, open
+    Menu, set Compiler to XeLaTeX, and press Recompile}{}
+\fi
+
+\RequirePackage[a4paper,margin=2cm]{geometry}
+\RequirePackage{fontspec}
+\RequirePackage{kotex}
+% Overleaf has the Noto CJK fonts. Elsewhere, use them if they are installed.
+\IfFontExistsTF{Noto Serif CJK KR}{%
+  \setmainhangulfont{Noto Serif CJK KR}
+  \setsanshangulfont{Noto Sans CJK KR}
+  \setmonohangulfont{Noto Sans Mono CJK KR}
+}{}
+
+\RequirePackage{xcolor}
+\RequirePackage{graphicx}
+\RequirePackage{booktabs}
+\RequirePackage[hyphens]{url}
+\RequirePackage[hidelinks]{hyperref}
+\RequirePackage{fvextra}
+\RequirePackage[font=small]{caption}
+\RequirePackage{titlesec}
+\RequirePackage{enumitem}
+
+\frenchspacing
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5em}
+\setlist{nosep, leftmargin=1.5em}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.2em}{0.4em}
+\titlespacing*{\subsection}{0pt}{0.9em}{0.3em}
+\pagestyle{plain}
+\ifmas@ko\AtBeginDocument{\renewcommand{\figurename}{그림}}\fi
+
+% Header -----------------------------------------------------------------
+
+\newcommand{\mas@title}{}
+\newcommand{\mas@name}{}
+\newcommand{\mas@id}{}
+\newcommand{\reporttitle}[1]{\renewcommand{\mas@title}{#1}}
+\newcommand{\studentname}[1]{\renewcommand{\mas@name}{#1}}
+\newcommand{\studentid}[1]{\renewcommand{\mas@id}{#1}}
+
+\newcommand{\makeheader}{%
+  {\small MAS1004 Data \& AI, 2026 Fall\par}
+  \vspace{0.2em}
+  {\Large\bfseries \mas@title\par}
+  \vspace{0.3em}
+  \ifmas@ko
+    이름: \mas@name\qquad 학번: \mas@id\par
+  \else
+    Name: \mas@name\qquad Student ID: \mas@id\par
+  \fi
+  \vspace{0.3em}\hrule\vspace{0.6em}
+}
+
+% Short report -----------------------------------------------------------
+
+% A question as a heading, with the answer written under it.
+\newcommand{\question}[1]{\par\vspace{0.6em}{\bfseries #1\par}\vspace{0.2em}}
+
+% A red note after the text if the text runs past one page. The penalty makes
+% TeX break the page now if the last line does not fit, so that the page
+% counter is right.
+\newcommand{\mas@checktext}{%
+  \par\penalty0
+  \ifnum\value{page}>1
+    \medskip
+    {\color{red}\bfseries
+      \ifmas@ko 본문이 한 쪽을 넘었습니다. 한 쪽으로 줄이세요.%
+      \else The text is longer than one page. Cut it to one page.\fi\par}
+    \PackageWarningNoLine{mas1004}{The text is longer than one page}%
+  \fi}
+
+% Ends the text and starts the figure pages, which come after it.
+\newif\ifmas@figures
+\newcount\mas@figstart
+\newcommand{\figurepages}{%
+  \ifmas@onepage\mas@checktext\fi
+  \clearpage
+  \global\mas@figurestrue
+  \global\mas@figstart=\value{page}}
+
+\ifmas@onepage
+  \AtEndDocument{%
+    \ifmas@figures
+      \clearpage
+      \ifnum\numexpr\value{page}-\mas@figstart\relax>3
+        {\color{red}\bfseries
+          \ifmas@ko 그림이 세 쪽을 넘었습니다. 세 쪽으로 줄이세요.%
+          \else The figures take more than three pages. Cut them to
+            three.\fi\par}
+        \PackageWarningNoLine{mas1004}{The figures take more than three pages}%
+      \fi
+    \else
+      \mas@checktext
+    \fi}
+\fi
+
+% Long report ------------------------------------------------------------
+
+% Text that still has to be replaced, in red.
+\newcommand{\fillin}[1]{{\color{red}[#1]}}
+
+% The output of a command, saved to a file, printed exactly as it is.
+\newcommand{\outputfile}[1]{%
+  \IfFileExists{#1}{%
+    \VerbatimInput[fontsize=\footnotesize, breaklines, breakanywhere,
+                   frame=single, framesep=2mm]{#1}%
+  }{\fillin{missing file: \detokenize{#1}}\par}}
+
+% A picture, or a red note if the file is not there yet.
+\newcommand{\picturefile}[2][\linewidth]{%
+  \IfFileExists{#2}{\includegraphics[width=#1]{#2}}%
+    {\fbox{\parbox{0.8\linewidth}{\centering\fillin{missing picture: \detokenize{#2}}}}}}
+
+% Two pictures next to each other, each at most 6 cm high, each with a line
+% of text under it.
+\newcommand{\mas@side}[2]{%
+  \begin{minipage}[t]{0.48\linewidth}\centering
+    \IfFileExists{#1}{\includegraphics[width=\linewidth,height=6cm,keepaspectratio]{#1}}%
+      {\picturefile{#1}}\par\small #2
+  \end{minipage}}
+\newcommand{\sidebyside}[4]{%
+  \par\noindent\mas@side{#1}{#2}\hfill\mas@side{#3}{#4}\par\medskip}
+
+\endinput
