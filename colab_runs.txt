@@ -1,0 +1,3 @@
+python src/official.py --tag baseline
+python src/official.py --tag baseline --seed 1
+python src/curate.py mistakes results/baseline_seed0/model.onnx --every 2
