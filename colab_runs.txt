@@ -1,2 +1,2 @@
-python src/train_b.py --tag b1 --submit
-python src/check_submission.py --no-val
+python src/official.py --tag clip8000
+python src/curate.py mistakes results/clip8000_seed0/model.onnx --every 2
