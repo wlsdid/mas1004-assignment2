@@ -49,5 +49,6 @@ End the log with your plan for what to try next.
   유추할 수 있는 사진은 남겼다. 음식도 그 지역을 상징하는 음식은 남겼다. 물론 어떤 음식이든
   다른 곳에서도 볼 수 있지만, AI는 확률로 판단하므로 특정 지역 음식을 그 지역으로 높은
   확률로 판단하는 것은 괜찮다고 생각했다.
-- validation: (Colab 학습 후에 적는다) (before: baseline 0.4956)
+- validation: 0.4917 (before: baseline 0.4956, 시드 1 0.4942)
+  (seoul 0.567, busan 0.378, tokyo 0.632, osaka 0.378, taipei 0.504)
 - what it means: (결과를 보고 적는다)
