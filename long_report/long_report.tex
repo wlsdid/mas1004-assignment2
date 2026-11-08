@@ -13,78 +13,155 @@
 % New Project, Upload Project. Set Menu, Compiler to XeLaTeX, and Recompile.
 
 \documentclass[11pt]{article}
-\usepackage{mas1004}
+\usepackage[ko]{mas1004}
 
-\reporttitle{Assignment 2: Long report}
-\studentname{Your name}
-\studentid{Your student ID}
+\reporttitle{과제 2: 긴 보고서}
+\studentname{\fillin{이름}}
+\studentid{\fillin{학번}}
 
 \begin{document}
 \makeheader
 
-\fillin{Your leaderboard nickname, and the tags of your last Track A and Track B releases.}
-
-% The sections below are a suggestion. Change, merge or add sections as you
-% like; README.md, "The long report", says what a reader should be able to see.
+리더보드 닉네임: Yang \fillin{닉네임이 맞는지 확인}.
+마지막 릴리스: Track A \texttt{track-a-1} \fillin{마감 전 마지막 Track A 릴리스로 바꾸기},
+Track B \texttt{track-b-1} \fillin{마감 전 마지막 Track B 릴리스로 바꾸기}.
 
 % ---------------------------------------------------------------------------
 \section*{Track A}
 
 \begin{center}\footnotesize
-\begin{tabular}{lp{0.6\linewidth}r}
+\begin{tabular}{lp{0.55\linewidth}r}
 \toprule
-tag & what changed from the run before & validation \\
+tag & 이전 실행과 달라진 점 & validation \\
 \midrule
-\multicolumn{3}{l}{\fillin{one row per recipe, with the numbers from experiments.csv}} \\
+baseline (seed 0) & 스타터 레시피 그대로, 학습 사진 전체 (44,257장) & 0.4956 \\
+baseline (seed 1) & 시드만 1로 바꿈 & 0.4942 \\
+clip8000 (seed 0) & 레시피는 그대로, 학습 사진 선택만 바꿈 (36,886장, 아래 ``사진을 보고 내린 결정'') & 0.4917 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\fillin{What you tried, why, and what you think each result means.}
+\textbf{baseline.} 스타터 레시피를 시드 0과 1로 두 번 학습했다. 두 번의 검증 점수 차이는
+0.0014였고, 도시별로는 타이베이가 0.559와 0.524로 가장 크게(0.035) 달랐다. 시드만 바꿔도
+이만큼 움직이므로, 이보다 작은 차이는 우연일 수 있다고 보고 이후 변경을 비교했다.
+\fillin{baseline을 두 번 돌린 이유와, 두 점수를 보고 든 생각을 직접}
 
-\fillin{Your final recipe and selection, and their leaderboard score next to
-their validation score.}
+\textbf{clip8000.} 학습 사진에서 지역을 알려주는 단서가 없는 사진(글씨나 건물이 보이지
+않는 도로, 사물만 또는 인물만 있는 사진, 어디서나 볼 수 있는 음식)을 7,371장 뺐다.
+검증 점수는 0.4917로 baseline 두 번(0.4956, 0.4942)보다 0.003$\sim$0.004 낮았다.
+도시별로는 오사카가 0.378로 baseline(0.345, 0.371)보다 높았고, 타이베이는 0.504로
+baseline(0.559, 0.524)보다 낮았다. 타이베이는 학습 사진의 25\%가 빠져 다섯 도시 중 가장
+많이 빠진 도시다. \fillin{이 결과가 무엇을 뜻한다고 생각하는지 직접}
+
+\fillin{마지막 Track A 레시피와 선택, 그 리더보드 점수를 검증 점수 옆에.
+현재 리더보드의 스타터 레시피(track-a-1)는 0.407이고, 채점 서버가 잰 검증 점수 평균은 0.498이다.}
 
 % ---------------------------------------------------------------------------
-\section*{Decisions you made from photos}
+\section*{사진을 보고 내린 결정}
 
 \picturefile{figures/mistakes_baseline_seed0_busan_00.png}
 
-\fillin{What you looked at, what you saw in common, and the rule you wrote
-before acting.}
+\textbf{본 것.} baseline 시드 0 모델이 가장 자신 있게 틀린 검증 사진을 도시별로 한 장씩
+(\texttt{curate.py mistakes}) 보고, 틀린 사진의 공통점을 적었다.
+\begin{itemize}
+\item 틀린 사진 중에는 도로나 길을 찍은 사진이 많다.
+\item 사진 속 글자가 잘 보이지 않는다.
+\item 자동차나 비행기 같은 사물이 많이 찍혀 있다.
+\item 특색이 없어 어디서나 볼 수 있는 음식 사진이 섞여 있다.
+\end{itemize}
 
-\fillin{What you changed (the output of curate.py count, or the photos you
-added), and the scores before and after.}
+\textbf{규칙.} 행동하기 전에 규칙을 정했다. ``글씨나 건물이 보이지 않는 도로 사진은 뺀다.
+사물만 있거나 인물만 있는 사진도 뺀다.'' 그 뒤 음식에 대한 규칙을 더했다. ``음식 사진 중
+카페나 브런치처럼 어디서나 볼 수 있는 음식은 빼고, 그 지역의 전통 음식이나 유명한 음식은
+남긴다.''
 
-\fillin{The requests you gave your agent for these decisions.}
+\textbf{적용 1: 직접 고르기.} 부산 학습 사진을 50장마다 한 장씩 뽑은 시트 3장(104장)에서
+규칙에 맞는 사진 20장을 직접 골라 뺐다.
+
+\picturefile{figures/look_busan_01.png}
+
+\textbf{적용 2: CLIP으로 넓히기.} 손으로는 학습 사진 44,257장 중 일부밖에 볼 수 없어서,
+규칙의 적용은 CLIP(openai/clip-vit-base-patch32)에 맡기고 기준점은 직접 정했다.
+CLIP에는 규칙을 문장으로 주었다. 뺄 쪽은 ``a photo of a plain road with no signs and no
+buildings'', ``a close-up photo of a single object'', ``a photo of only people'', 남길 쪽은
+``a photo of a city street with shop signs and writing'', ``a photo of buildings in a city''이다.
+사진마다 뺄 쪽 문장에 가까운 정도를 점수로 매기고(\texttt{scripts/clip\_filter.py}),
+순위 구간별로 48장씩 뽑은 시트를 2,000위부터 9,000위까지 500위 단위로 본 뒤
+8,000위까지 빼기로 정했다. CLIP은 학습 사진 목록을 만드는 데만 썼고, 학습에는 들어가지 않는다.
+
+\sidebyside{figures/clip_rank_1-250_00.png}{CLIP 순위 1$\sim$250위에서 뽑은 48장}%
+{figures/clip_rank_7501-8000_00.png}{CLIP 순위 7,501$\sim$8,000위에서 뽑은 48장}
+
+8,000위 안의 음식 사진은 CLIP으로 한 번 더 나누었다. 음식으로 판단된 833장을
+특색 없는 음식(커피, 카페 디저트, 빵, 패스트푸드)과 지역 음식(한국 전통 음식, 부산
+돼지국밥·밀면, 일본 라멘·스시, 오사카 오코노미야키·타코야키, 대만 샤오롱바오·야시장 음식)
+문장에 견주어 지역 음식 점수를 매겼다. 시트를 보고 0.75 이상이거나 Wikimedia 제목에 음식
+이름이 있는 649장은 남기고 184장은 뺐다. \fillin{8,000위와 0.75를 기준으로 고른 이유를 직접}
+
+\sidebyside{figures/food_local_00.png}{지역 음식 점수가 가장 높은 48장 (남김)}%
+{figures/food_plain_00.png}{지역 음식 점수가 가장 낮은 48장 (뺌)}
+
+\textbf{결과.} 학습 사진은 44,257장에서 36,886장이 되었다. 검증 점수는 0.4956(baseline
+시드 0)에서 0.4917이 되었다.
+
+\outputfile{outputs/curate_count.txt}
+
+\textbf{검증 사진에는 이런 사진이 얼마나 있나.} 같은 CLIP 점수를 검증 사진에도 매겨,
+학습 사진에서 고른 기준점(8,000위의 점수 0.9862) 이상인 사진의 비율을 비교했다
+(\texttt{scripts/clip\_compare.py}). 검증 사진은 고르는 데 쓰지 않고 세기만 했다.
+학습 사진은 18.1\%, 검증 사진은 11.1\%가 기준점 이상이었다. 타이베이는 학습 27.1\%,
+검증 16.6\%로 두 쪽 모두 가장 높았다.
+
+\outputfile{outputs/clip_compare.txt}
+
+\fillin{이 비교를 보고 clip8000의 검증 점수를 어떻게 해석하는지 직접}
+
+\textbf{에이전트에게 한 요청.} 이 결정을 위해 에이전트에게 한 요청을 그대로 옮긴다.
+\begin{itemize}
+\item ``도로,길 사진이 많음, 글자가 잘 보이지 않음, 자동차나 비행기 등의 사물이 많음,
+  특색이 없는 어디서나 볼 수 있는 음식 사진이 있음 -> 말로 풀어서 작성해줘''
+\item ``글씨나 건물이 보이지 않는 도로 사진 빼기''
+\item ``사물만 인물만 있는 사진도 규칙에 추가'' 그리고 시트별 번호 (look\_busan\_00:
+  13 14 17 35, look\_busan\_01: 1 4 12 13 15 17 23 24 30 33 34 35, look\_busan\_02: 1 2 5 6)
+\item ``너가 알아서 빼줄 수는 없는거야?'' $\rightarrow$ 에이전트가 직접 고르는 것은 과제
+  규칙에 맞지 않아, 규칙은 내가 정하고 적용은 CLIP으로 하는 방법을 골랐다.
+\item ``이미 손으로 한 건 적용하고 나머지를 진행해''
+\item ``음식 사진 중에서 카페 같은 특색 없는 사진을 빼고 지역의 전통음식, 유명한 음식은
+  남기고 싶은데 어떻게 해야 하지?'', ``진행해줘''
+\item ``0.75 이상'' (지역 음식 기준), ``8000위까지 빼자'' (CLIP 순위 기준)
+\end{itemize}
 
 % ---------------------------------------------------------------------------
 \section*{Track B}
 
-\fillin{What you tried, one step at a time, and the validation score after
-each step.}
+\textbf{b1.} 스타터 모델 \texttt{train\_b.py}를 그대로 학습했다. ResNet18, 224px, 4에폭,
+학습 사진 전체. 검증 점수는 0.4832다 (seoul 0.564, busan 0.369, tokyo 0.604, osaka 0.354,
+taipei 0.524).
 
-\fillin{How you collected any extra photos.}
+\fillin{그다음 시도한 변경과, 변경마다의 검증 점수}
 
-\fillin{Your validation score next to your leaderboard score, and why they
-might disagree.}
+\fillin{직접 모은 사진이 있다면 어떻게 모았는지}
 
-\subsection*{Your submission, as the grader sees it}
+\textbf{검증 점수와 리더보드 점수.} b1의 검증 점수는 0.483, 리더보드 점수는 0.397이다.
+같은 코드를 채점 서버가 돌린 ``train\_b.py as given''은 리더보드 0.403이었다. 리더보드 사진은
+스타터 데이터에 없는 유튜브 채널의 거리 영상 프레임이고, 검증 사진은 스타터 데이터와 같은
+출처(Wikimedia, OSV-5M, 유튜브)에서 왔다. \fillin{두 점수가 왜 다르다고 생각하는지 직접}
+
+\subsection*{채점 서버가 보는 제출 파일}
 \outputfile{outputs/check_submission.txt}
 
 % ---------------------------------------------------------------------------
-\section*{What made the difference}
+\section*{무엇이 차이를 만들었나}
 
-\fillin{Which change helped most and which least, in both tracks, with your
-numbers.}
+\fillin{두 트랙에서 가장 도움이 된 변경과 가장 덜 된 변경, 숫자와 함께}
 
-\fillin{What you would do next with one more week.}
+\fillin{일주일이 더 있다면 무엇을 하고 싶은지}
 
 % ---------------------------------------------------------------------------
-\section*{All runs}
+\section*{모든 실행}
 \outputfile{outputs/experiments.csv}
 
-\section*{Lab notebook}
+\section*{실험 노트}
 \outputfile{outputs/LOG.md}
 
 \end{document}

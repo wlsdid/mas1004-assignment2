@@ -34,6 +34,8 @@ import curate  # noqa: E402
 import rules  # noqa: E402
 
 SCORES = ROOT / "results" / "clip_scores.csv"
+VAL_SCORES = ROOT / "results" / "clip_scores_val.csv"  # only to compare, never to select
+VAL = ROOT / "data" / "starter" / "val"
 REASON = "CLIP: 글씨나 건물이 보이지 않는 도로 사진, 또는 사물이나 인물만 있는 사진"
 
 # The student's rule, as sentences for CLIP. A photo's score is how much of
@@ -123,10 +125,10 @@ def load_clip():
     return text, images
 
 
-def read_scores():
-    if not SCORES.exists():
+def read_scores(scores=SCORES):
+    if not scores.exists():
         return []
-    with open(SCORES, newline="", encoding="utf-8") as f:
+    with open(scores, newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
 
 
@@ -141,20 +143,25 @@ def cmd_score(args):
         t = features(model.get_text_features(**tok(list(PROMPTS.values()), padding=True, return_tensors="pt")))
         t = t / t.norm(dim=-1, keepdim=True)
 
-    done = {r["path"] for r in read_scores()}
-    todo = [p for p in curate.read_selection() if p not in done]
+    scores, folder = (SCORES, curate.TRAIN) if args.split == "train" else (VAL_SCORES, VAL)
+    done = {r["path"] for r in read_scores(scores)}
+    if args.split == "train":
+        todo = [p for p in curate.read_selection() if p not in done]
+    else:
+        todo = [f"{c}/{p.name}" for c in rules.CITIES for p in sorted((VAL / c).glob("*.jpg"))
+                if f"{c}/{p.name}" not in done]
     if args.limit:
         todo = todo[:args.limit]
-    SCORES.parent.mkdir(parents=True, exist_ok=True)
-    new = not SCORES.exists()
+    scores.parent.mkdir(parents=True, exist_ok=True)
+    new = not scores.exists()
     start = time.time()
-    with open(SCORES, "a", newline="", encoding="utf-8") as f, ThreadPoolExecutor(8) as pool:
+    with open(scores, "a", newline="", encoding="utf-8") as f, ThreadPoolExecutor(8) as pool:
         w = csv.writer(f)
         if new:
             w.writerow(["path", "drop_score", "best", *PROMPTS])
         for i in range(0, len(todo), args.batch):
             chunk = todo[i:i + args.batch]
-            x = torch.from_numpy(np.stack(list(pool.map(lambda p: prepare(curate.TRAIN / p), chunk))))
+            x = torch.from_numpy(np.stack(list(pool.map(lambda p: prepare(folder / p), chunk))))
             with torch.no_grad():
                 v = features(model.get_image_features(pixel_values=x))
                 v = v / v.norm(dim=-1, keepdim=True)
@@ -167,7 +174,7 @@ def cmd_score(args):
             rate = n / (time.time() - start)
             print(f"\r  {n}/{len(todo)} photos, {rate:.1f}/s, about {(len(todo) - n) / rate / 60:.0f} min left",
                   end="", flush=True)
-    print(f"\nscores in {SCORES}")
+    print(f"\nscores in {scores}")
 
 
 def titles():
@@ -258,7 +265,7 @@ def cmd_drop(args):
         if new:
             w.writerow(["path", "reason", "when"])
         for r in rows:
-            w.writerow([r["path"], f"{REASON} (top {args.top}, score {r['drop_score']})", when])
+            w.writerow([r["path"], f"{REASON} (CLIP rank {args.top} and above; local food at {args.min_local} kept)", when])
     print(f"dropped {len(rows)} photos down to score {rows[-1]['drop_score']}; "
           f"the selection now has {len(kept)}")
 
@@ -269,6 +276,8 @@ def main():
     s = sub.add_parser("score")
     s.add_argument("--limit", type=int, default=0)
     s.add_argument("--batch", type=int, default=64)
+    s.add_argument("--split", choices=["train", "val"], default="train",
+                   help="val: score the validation photos, only to compare them with the training photos")
     s = sub.add_parser("sheets")
     s.add_argument("--at", type=int, nargs="+", default=[0, 250, 500, 1000, 2000, 4000, 8000])
     s = sub.add_parser("drop")

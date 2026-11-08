@@ -1,0 +1,9 @@
+cut-off: drop score 0.9862 (rank 8000 of 44237 training photos)
+city                  train                val
+seoul     1982 / 11274 17.6%   355 /  2435 14.6%
+busan     1007 /  5171 19.5%   118 /  1390  8.5%
+tokyo     1844 / 13347 13.8%   343 /  3881  8.8%
+osaka     1205 /  7200 16.7%   156 /  2128  7.3%
+taipei    1965 /  7245 27.1%   373 /  2243 16.6%
+total     8003 / 44237 18.1%  1345 / 12077 11.1%
+validation photos at or above the cut-off, by the closest sentence: {'object': 514, 'people': 392, 'empty_road': 439}

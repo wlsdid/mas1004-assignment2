@@ -1,0 +1,8 @@
+city      selected     of   by source
+seoul         9516  11274   commons 5325, osv5m 270, youtube 3921
+busan         4194   5191   commons 2784, youtube 1410
+tokyo        11647  13347   commons 5866, osv5m 1637, youtube 4144
+osaka         6074   7200   commons 4409, osv5m 299, youtube 1366
+taipei        5455   7245   commons 4189, osv5m 330, youtube 936
+total 36886 rows
+dropped: 7351 CLIP: 글씨나 건물이 보이지 않는 도로 사진, 또는 사물이나 인물만 있는 사진 (CLIP rank 8000 and above; local food at 0.75 kept); 20 글씨나 건물이 보이지 않는 도로 사진, 또는 사물이나 인물만 있는 사진
