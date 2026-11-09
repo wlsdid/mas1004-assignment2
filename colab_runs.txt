@@ -1,2 +1,2 @@
-python src/train_b.py --tag b2 --model mobilenet_v3_large --size 448 --epochs 8 --balance --no-flip --submit
+python src/train_b.py --tag b3 --model efficientnet_b3 --size 320 --epochs 8 --batch-size 32 --balance --no-flip --gpu-decode --folders data/starter/train data/mine --submit
 python src/check_submission.py --no-val

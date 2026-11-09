@@ -35,6 +35,10 @@ import torch.nn as nn  # noqa: E402
 from torch.utils.data import DataLoader, Dataset  # noqa: E402
 from torchvision import models  # noqa: E402
 from torchvision import transforms as T  # noqa: E402
+from torchvision.io import ImageReadMode, decode_jpeg, read_file  # noqa: E402
+from torchvision.transforms import functional as TF  # noqa: E402
+from PIL import Image  # noqa: E402
+import random  # noqa: E402
 
 import rules  # noqa: E402
 from export import export_onnx  # noqa: E402
@@ -47,6 +51,7 @@ MODELS = {
     "mobilenet_v3_large": ("mobilenet_v3_large", "IMAGENET1K_V2"),
     "efficientnet_b0": ("efficientnet_b0", "IMAGENET1K_V1"),
     "efficientnet_b1": ("efficientnet_b1", "IMAGENET1K_V2"),
+    "efficientnet_b3": ("efficientnet_b3", "IMAGENET1K_V1"),
     "regnet_y_800mf": ("regnet_y_800mf", "IMAGENET1K_V2"),
     "regnet_y_1_6gf": ("regnet_y_1_6gf", "IMAGENET1K_V2"),
     "shufflenet_v2_x2_0": ("shufflenet_v2_x2_0", "IMAGENET1K_V1"),
@@ -74,6 +79,54 @@ class Photos(Dataset):
     def __getitem__(self, i):
         path, city = self.rows[i]
         return self.transform(rules.load_photo(path)), CITIES.index(city)
+
+
+class RawPhotos(Dataset):
+    """Photos as JPEG bytes, to be decoded on the GPU (see gpu_batch).
+
+    Colab has two CPU cores, and decoding photos there takes most of the time
+    of a run. A photo that is not a plain JPEG, or has to be turned upright,
+    is opened here the way rules.load_photo opens it instead.
+    """
+
+    def __init__(self, rows):
+        self.rows = rows
+
+    def __len__(self):
+        return len(self.rows)
+
+    def __getitem__(self, i):
+        path, city = self.rows[i]
+        with Image.open(path) as im:
+            plain = im.format == "JPEG" and im.mode in ("RGB", "L") and im.getexif().get(0x0112, 1) == 1
+        if plain:
+            return read_file(str(path)), CITIES.index(city), True
+        return TF.pil_to_tensor(rules.load_photo(path)), CITIES.index(city), False
+
+
+def collate_raw(batch):
+    return [b[0] for b in batch], torch.tensor([b[1] for b in batch]), [b[2] for b in batch]
+
+
+def gpu_batch(data, is_jpeg, size, device, flip):
+    """Decode a batch on the GPU and apply the same changes as the CPU transform."""
+    jpegs = [d for d, j in zip(data, is_jpeg) if j]
+    try:
+        decoded = decode_jpeg(jpegs, mode=ImageReadMode.RGB, device=device) if jpegs else []
+    except RuntimeError:  # a JPEG the GPU decoder cannot read: decode this batch on the CPU
+        decoded = [d.to(device) for d in decode_jpeg(jpegs, mode=ImageReadMode.RGB)]
+    decoded = iter(decoded)
+    jitter = T.ColorJitter(0.2, 0.2, 0.2)
+    out = []
+    for d, j in zip(data, is_jpeg):
+        img = next(decoded) if j else d.to(device)
+        top, left, h, w = T.RandomResizedCrop.get_params(img, (0.35, 1.0), (3 / 4, 4 / 3))
+        img = TF.resized_crop(img, top, left, h, w, [size, size], antialias=True)
+        img = jitter(img.float() / 255)
+        if flip and random.random() < 0.5:
+            img = img.flip(-1)
+        out.append(img)
+    return TF.normalize(torch.stack(out), MEAN, STD)
 
 
 @torch.no_grad()
@@ -114,6 +167,8 @@ def main():
     ap.add_argument("--balance", action="store_true", help="draw every city equally often")
     ap.add_argument("--no-flip", action="store_true",
                     help="no left-right flips: they mirror writing and the side of the road cars drive on")
+    ap.add_argument("--gpu-decode", action="store_true",
+                    help="decode and change the photos on the GPU: much quicker on Colab's two CPU cores")
     ap.add_argument("--workers", type=int, default=min(8, os.cpu_count() or 2))
     ap.add_argument("--submit", action="store_true", help="also copy the model into submission/")
     ap.add_argument("--val-every", type=int, default=1,
@@ -135,14 +190,17 @@ def main():
     flip = [] if args.no_flip else [T.RandomHorizontalFlip()]
     tf = T.Compose([T.RandomResizedCrop(args.size, scale=(0.35, 1.0)), *flip,
                     T.ColorJitter(0.2, 0.2, 0.2), T.ToTensor(), T.Normalize(MEAN, STD)])
+    gpu_decode = args.gpu_decode and device.type == "cuda"
+    data = RawPhotos(rows) if gpu_decode else Photos(rows, tf)
+    extra = {"collate_fn": collate_raw} if gpu_decode else {}
     if args.balance:
         weights = [1.0 / counts[c] for _, c in rows]
         sampler = torch.utils.data.WeightedRandomSampler(weights, len(rows), replacement=True)
-        loader = DataLoader(Photos(rows, tf), batch_size=args.batch_size, sampler=sampler,
-                            num_workers=args.workers, drop_last=True)
+        loader = DataLoader(data, batch_size=args.batch_size, sampler=sampler,
+                            num_workers=args.workers, drop_last=True, **extra)
     else:
-        loader = DataLoader(Photos(rows, tf), batch_size=args.batch_size, shuffle=True,
-                            num_workers=args.workers, drop_last=True)
+        loader = DataLoader(data, batch_size=args.batch_size, shuffle=True,
+                            num_workers=args.workers, drop_last=True, **extra)
 
     net, weights_name = build(args.model)
     net = net.to(device)
@@ -153,8 +211,12 @@ def main():
     for epoch in range(args.epochs):
         net.train()
         losses = []
-        for x, y in loader:
-            x, y = x.to(device), y.to(device)
+        for batch in loader:
+            if gpu_decode:
+                x = gpu_batch(batch[0], batch[2], args.size, device, not args.no_flip)
+                y = batch[1].to(device)
+            else:
+                x, y = batch[0].to(device), batch[1].to(device)
             with torch.autocast(device.type, dtype=torch.float16, enabled=device.type == "cuda"):
                 loss = nn.functional.cross_entropy(net(x), y, label_smoothing=0.1)
             opt.zero_grad(set_to_none=True)
