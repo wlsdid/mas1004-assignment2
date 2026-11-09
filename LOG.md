@@ -16,11 +16,11 @@ End the log with your plan for what to try next.
 
 ## 2026-11-02 baseline (Track A)
 - changed: 스타터 레시피 그대로, 시드 0과 1로 두 번 학습 (Colab)
-- why: (아직 적지 않음)
+- why: 과제 안내대로, 시드만 바꿨을 때 점수가 우연히 얼마나 움직이는지 보려고
 - validation: 시드 0 0.4956, 시드 1 0.4942
   (시드 0: seoul 0.574, busan 0.368, tokyo 0.632, osaka 0.345, taipei 0.559;
   시드 1: seoul 0.555, busan 0.402, tokyo 0.619, osaka 0.371, taipei 0.524)
-- what it means: (아직 적지 않음)
+- what it means: 학습 점수가 전부가 아니고, 점수에는 우연이 섞여 있다. 많은 학습으로 점수를 안정화하는 것이 필요하다.
 
 ### baseline 시드 0의 오답 시트에서 본 것
 `results/curate/mistakes_baseline_seed0_<city>_00.png` 다섯 장을 보고 적은 내용.
@@ -37,7 +37,8 @@ End the log with your plan for what to try next.
     음식이나 유명한 음식은 남긴다.
   - 부산 샘플 시트(look_busan_00~02)에서 이 규칙에 맞는 사진 20장을 직접 골라 뺐다.
   - 나머지는 CLIP으로 학습 사진마다 규칙에 맞는 정도를 점수로 매기고
-    (`scripts/clip_filter.py`), 순위 구간별 시트를 보고 8,000위까지 빼기로 정했다.
+    (`scripts/clip_filter.py`), 순위 구간별 시트를 보고 8,000위까지 빼기로 정했다. 8,000위 위로는 남길 만한 사진이
+    눈에 띄지 않았고, 그 아래로는 주변의 건물이나 표지판이 조금씩 보이기 시작했다.
     그 안의 음식 사진은 지역 음식 점수 0.75 이상이거나 제목에 음식 이름이 있으면 남겼다
     (649장).
   - 학습 사진 44,257장 → 36,886장 (seoul 9,516, busan 4,194, tokyo 11,647,
@@ -51,4 +52,4 @@ End the log with your plan for what to try next.
   확률로 판단하는 것은 괜찮다고 생각했다.
 - validation: 0.4917 (before: baseline 0.4956, 시드 1 0.4942)
   (seoul 0.567, busan 0.378, tokyo 0.632, osaka 0.378, taipei 0.504)
-- what it means: (결과를 보고 적는다)
+- what it means: 전체 학습량에 비해 빠진 사진이 너무 적었다. 또 여러 지역에서 골고루 빠진 것이 아니어서 학습에 긍정적인 영향이 적었다고 생각한다.
