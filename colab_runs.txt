@@ -1,2 +1,2 @@
-python src/official.py --tag clip8000
-python src/curate.py mistakes results/clip8000_seed0/model.onnx --every 2
+python src/train_b.py --tag b2 --model mobilenet_v3_large --size 448 --epochs 8 --balance --no-flip --submit
+python src/check_submission.py --no-val

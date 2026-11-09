@@ -112,6 +112,8 @@ def main():
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--batch-size", type=int, default=64)
     ap.add_argument("--balance", action="store_true", help="draw every city equally often")
+    ap.add_argument("--no-flip", action="store_true",
+                    help="no left-right flips: they mirror writing and the side of the road cars drive on")
     ap.add_argument("--workers", type=int, default=min(8, os.cpu_count() or 2))
     ap.add_argument("--submit", action="store_true", help="also copy the model into submission/")
     ap.add_argument("--val-every", type=int, default=1,
@@ -130,7 +132,8 @@ def main():
     counts = {c: sum(1 for _, x in rows if x == c) for c in CITIES}
     print(f"{len(rows)} photos ({', '.join(f'{c} {n}' for c, n in counts.items())}) on {device}")
 
-    tf = T.Compose([T.RandomResizedCrop(args.size, scale=(0.35, 1.0)), T.RandomHorizontalFlip(),
+    flip = [] if args.no_flip else [T.RandomHorizontalFlip()]
+    tf = T.Compose([T.RandomResizedCrop(args.size, scale=(0.35, 1.0)), *flip,
                     T.ColorJitter(0.2, 0.2, 0.2), T.ToTensor(), T.Normalize(MEAN, STD)])
     if args.balance:
         weights = [1.0 / counts[c] for _, c in rows]
@@ -170,7 +173,8 @@ def main():
     out = ROOT / "results" / args.tag
     export_onnx(net, out / "model.onnx", args.size)
     info = {"image_size": args.size, "starting_weights": weights_name,
-            "data": " + ".join(shown(f) for f in args.folders), "summary": f"{args.model} at {args.size}, {args.epochs} epochs"}
+            "data": " + ".join(shown(f) for f in args.folders), "summary": f"{args.model} at {args.size}, {args.epochs} epochs"
+            + ", cities balanced" * args.balance + ", no flips" * args.no_flip}
     (out / "submission.json").write_text(json.dumps(info, indent=2))
     m = rules.measure_onnx(out / "model.onnx", args.size)
     print(f"wrote {out / 'model.onnx'}: {m['parameters'] / 1e6:.2f} million parameters, {m['gmacs']:.2f} billion multiply-adds")
