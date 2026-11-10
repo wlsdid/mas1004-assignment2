@@ -75,3 +75,7 @@ End the log with your plan for what to try next.
 - validation: 0.5901, 0.591 (before: b1 0.4832)
   (두 번째: seoul 0.609, busan 0.566, tokyo 0.610, osaka 0.506, taipei 0.663)
 - what it means: 점수가 크게 오른 것을 보고 좋은 데이터를 수집하는 것이 중요하다고 생각했다.
+
+## 다음 계획
+모델, 데이터의 양, 데이터 분류에 대한 개선을 여러 조합으로 적용해 보고, 성능을 크게 올리는
+변경을 찾아 성능을 최대치로 올려 보고 싶다.
