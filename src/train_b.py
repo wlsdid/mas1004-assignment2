@@ -210,8 +210,27 @@ def main():
     opt = torch.optim.AdamW(net.parameters(), lr=args.lr, weight_decay=0.05)
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=args.lr, total_steps=args.epochs * len(loader), pct_start=0.15)
     scaler = torch.amp.GradScaler("cuda", enabled=device.type == "cuda")
+
+    # After every epoch the training state goes to results/<tag>/checkpoint.pt
+    # (in Google Drive on Colab). A run that broke off carries on from the last
+    # finished epoch when it is started again with the same settings.
+    out = ROOT / "results" / args.tag
+    ckpt = out / "checkpoint.pt"
+    settings = {k: v for k, v in vars(args).items() if k not in ("workers", "submit", "val_every")}
+    first, seconds_before = 0, 0.0
+    if ckpt.exists():
+        state = torch.load(ckpt, map_location=device, weights_only=False)
+        if state["settings"] == settings:
+            net.load_state_dict(state["net"])
+            opt.load_state_dict(state["opt"])
+            sched.load_state_dict(state["sched"])
+            scaler.load_state_dict(state["scaler"])
+            first, seconds_before = state["epoch"], state["seconds"]
+            print(f"carrying on from {ckpt}, after epoch {first}", flush=True)
+        else:
+            print(f"{ckpt} is from other settings; starting from the beginning", flush=True)
     start = time.time()
-    for epoch in range(args.epochs):
+    for epoch in range(first, args.epochs):
         net.train()
         losses = []
         for batch in loader:
@@ -228,14 +247,19 @@ def main():
             scaler.update()
             sched.step()
             losses.append(loss.item())
-        print(f"epoch {epoch + 1}/{args.epochs}: loss {np.mean(losses):.3f} ({time.time() - start:.0f}s)", flush=True)
-    train_seconds = time.time() - start
+        elapsed = seconds_before + time.time() - start
+        print(f"epoch {epoch + 1}/{args.epochs}: loss {np.mean(losses):.3f} ({elapsed:.0f}s)", flush=True)
+        out.mkdir(parents=True, exist_ok=True)
+        tmp = ckpt.with_suffix(".tmp")
+        torch.save({"settings": settings, "epoch": epoch + 1, "seconds": elapsed, "net": net.state_dict(),
+                    "opt": opt.state_dict(), "sched": sched.state_dict(), "scaler": scaler.state_dict()}, tmp)
+        tmp.replace(ckpt)
+    train_seconds = seconds_before + time.time() - start
 
     val = rules.list_photos(ROOT / "data" / "starter" / "val")[::args.val_every]
     score, per_city, _ = measure(net, val, args.size, device, args.workers)
     print(f"validation score {score:.3f} (" + ", ".join(f"{c} {v:.3f}" for c, v in per_city.items()) + ")")
 
-    out = ROOT / "results" / args.tag
     export_onnx(net, out / "model.onnx", args.size)
     info = {"image_size": args.size, "starting_weights": weights_name,
             "data": " + ".join(shown(f) for f in args.folders), "summary": f"{args.model} at {args.size}, {args.epochs} epochs"
@@ -262,6 +286,7 @@ def main():
                     **{c: round(per_city.get(c, 0), 4) for c in CITIES}, "train_seconds": round(train_seconds, 1),
                     "device": str(device), "selection": f"{args.model} {args.size}px; " + " + ".join(shown(f) for f in args.folders),
                     "commit": git_commit()})
+    ckpt.unlink(missing_ok=True)  # finished: the model is in model.onnx
 
 
 if __name__ == "__main__":

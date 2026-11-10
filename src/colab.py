@@ -167,7 +167,7 @@ def cmd_pack(args):
             for path in sorted(folder.rglob("*")) if folder.is_dir() else []:
                 # The grader trains Track A recipes itself, and a Track B model to hand in
                 # is in submission/, so the models in results/ stay here.
-                if path.is_file() and not (folder == RESULTS and path.suffix == ".onnx"):
+                if path.is_file() and not (folder == RESULTS and path.suffix in (".onnx", ".pt", ".tmp")):
                     z.write(path, path.relative_to(ROOT).as_posix())
                     count += 1
     print(f"packed {count} files into {out.name} ({out.stat().st_size / 1e6:.1f} MB)")
