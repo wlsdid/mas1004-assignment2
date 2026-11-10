@@ -53,3 +53,12 @@ End the log with your plan for what to try next.
 - validation: 0.4917 (before: baseline 0.4956, 시드 1 0.4942)
   (seoul 0.567, busan 0.378, tokyo 0.632, osaka 0.378, taipei 0.504)
 - what it means: 전체 학습량에 비해 빠진 사진이 너무 적었다. 또 여러 지역에서 골고루 빠진 것이 아니어서 학습에 긍정적인 영향이 적었다고 생각한다.
+
+## 2026-11-09 clip8000_noflip (Track A)
+- changed: clip8000과 같은 사진 선택에서, 레시피의 좌우 뒤집기(`T.RandomHorizontalFlip()`)만 뺐다.
+  이 컴퓨터의 CPU로 학습했다 (115분).
+- why: 좌우 뒤집기를 하면 통행 방향도 바뀌고 글자도 뒤집혀 알아볼 수 없다. 이러한 정보가
+  판단에 영향을 주는지 보고 싶었다.
+- validation: 0.4953 (before: clip8000 0.4917)
+  (seoul 0.594, busan 0.393, tokyo 0.618, osaka 0.367, taipei 0.505)
+- what it means: 점수의 큰 차이가 없는 것을 보아 큰 영향이 없는 것으로 추측할 수 있었다.
