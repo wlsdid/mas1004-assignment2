@@ -176,6 +176,8 @@ def main():
     ap.add_argument("--submit", action="store_true", help="also copy the model into submission/")
     ap.add_argument("--val-every", type=int, default=1,
                     help="measure on every n-th validation photo only (quicker without a GPU)")
+    ap.add_argument("--stop-now", action="store_true",
+                    help="train no further: hand in the model of the last finished epoch in the checkpoint")
     args = ap.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
@@ -216,7 +218,7 @@ def main():
     # finished epoch when it is started again with the same settings.
     out = ROOT / "results" / args.tag
     ckpt = out / "checkpoint.pt"
-    settings = {k: v for k, v in vars(args).items() if k not in ("workers", "submit", "val_every")}
+    settings = {k: v for k, v in vars(args).items() if k not in ("workers", "submit", "val_every", "stop_now")}
     first, seconds_before = 0, 0.0
     if ckpt.exists():
         state = torch.load(ckpt, map_location=device, weights_only=False)
@@ -229,8 +231,13 @@ def main():
             print(f"carrying on from {ckpt}, after epoch {first}", flush=True)
         else:
             print(f"{ckpt} is from other settings; starting from the beginning", flush=True)
+    if args.stop_now and first == 0:
+        sys.exit(f"--stop-now needs a checkpoint of these settings in {ckpt}")
+    epochs_done = first if args.stop_now else args.epochs
+    if args.stop_now:
+        print(f"--stop-now: handing in the model after epoch {first} of {args.epochs}", flush=True)
     start = time.time()
-    for epoch in range(first, args.epochs):
+    for epoch in range(first, epochs_done):
         net.train()
         losses = []
         for batch in loader:
@@ -262,7 +269,8 @@ def main():
 
     export_onnx(net, out / "model.onnx", args.size)
     info = {"image_size": args.size, "starting_weights": weights_name,
-            "data": " + ".join(shown(f) for f in args.folders), "summary": f"{args.model} at {args.size}, {args.epochs} epochs"
+            "data": " + ".join(shown(f) for f in args.folders), "summary": f"{args.model} at {args.size}, "
+            + (f"{epochs_done} of {args.epochs} epochs" if epochs_done < args.epochs else f"{args.epochs} epochs")
             + ", cities balanced" * args.balance + ", no flips" * args.no_flip}
     (out / "submission.json").write_text(json.dumps(info, indent=2))
     m = rules.measure_onnx(out / "model.onnx", args.size)
@@ -282,11 +290,12 @@ def main():
         if new:
             w.writeheader()
         w.writerow({"finished": datetime.now().isoformat(timespec="seconds"), "track": "B", "tag": args.tag,
-                    "budget": args.epochs * len(loader) * args.batch_size, "val_score": round(score, 4),
+                    "budget": epochs_done * len(loader) * args.batch_size, "val_score": round(score, 4),
                     **{c: round(per_city.get(c, 0), 4) for c in CITIES}, "train_seconds": round(train_seconds, 1),
                     "device": str(device), "selection": f"{args.model} {args.size}px; " + " + ".join(shown(f) for f in args.folders),
                     "commit": git_commit()})
-    ckpt.unlink(missing_ok=True)  # finished: the model is in model.onnx
+    if epochs_done == args.epochs:
+        ckpt.unlink(missing_ok=True)  # finished: the model is in model.onnx
 
 
 if __name__ == "__main__":
