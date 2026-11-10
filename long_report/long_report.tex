@@ -114,7 +114,10 @@ buildings'', ``a close-up photo of a single object'', ``a photo of only people''
 
 \outputfile{outputs/clip_compare.txt}
 
-\fillin{이 비교를 보고 clip8000의 검증 점수를 어떻게 해석하는지 직접}
+학습에서 이런 사진을 줄이면 해당 사진을 맞히는 능력이 떨어져 전체 점수가 오르지 않았을 수
+있다. 사람에게는 단서가 없어 보여도 모델은 도로의 형태나 색감 같은 정보를 활용했을 가능성이
+있다. 타이베이에서 이런 사진이 많았고 점수도 0.559에서 0.504로 내려간 것은 이 해석과
+연결된다.
 
 \textbf{에이전트에게 한 요청.} 이 결정을 위해 에이전트에게 한 요청을 그대로 옮긴다.
 \begin{itemize}
