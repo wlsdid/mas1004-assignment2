@@ -99,9 +99,12 @@ class RawPhotos(Dataset):
         path, city = self.rows[i]
         with Image.open(path) as im:
             plain = im.format == "JPEG" and im.mode in ("RGB", "L") and im.getexif().get(0x0112, 1) == 1
+        # numpy arrays, not tensors: a worker hands tensors over through one
+        # file descriptor each, and a batch of 32 separate tensors runs out of
+        # them on Colab ("OSError: Bad file descriptor").
         if plain:
-            return read_file(str(path)), CITIES.index(city), True
-        return TF.pil_to_tensor(rules.load_photo(path)), CITIES.index(city), False
+            return np.fromfile(path, dtype=np.uint8), CITIES.index(city), True
+        return np.asarray(rules.load_photo(path).convert("RGB")), CITIES.index(city), False
 
 
 def collate_raw(batch):
@@ -110,7 +113,7 @@ def collate_raw(batch):
 
 def gpu_batch(data, is_jpeg, size, device, flip):
     """Decode a batch on the GPU and apply the same changes as the CPU transform."""
-    jpegs = [d for d, j in zip(data, is_jpeg) if j]
+    jpegs = [torch.from_numpy(d) for d, j in zip(data, is_jpeg) if j]
     try:
         decoded = decode_jpeg(jpegs, mode=ImageReadMode.RGB, device=device) if jpegs else []
     except RuntimeError:  # a JPEG the GPU decoder cannot read: decode this batch on the CPU
@@ -119,7 +122,7 @@ def gpu_batch(data, is_jpeg, size, device, flip):
     jitter = T.ColorJitter(0.2, 0.2, 0.2)
     out = []
     for d, j in zip(data, is_jpeg):
-        img = next(decoded) if j else d.to(device)
+        img = next(decoded) if j else torch.from_numpy(d).permute(2, 0, 1).to(device)
         top, left, h, w = T.RandomResizedCrop.get_params(img, (0.35, 1.0), (3 / 4, 4 / 3))
         img = TF.resized_crop(img, top, left, h, w, [size, size], antialias=True)
         img = jitter(img.float() / 255)
