@@ -62,3 +62,16 @@ End the log with your plan for what to try next.
 - validation: 0.4953 (before: clip8000 0.4917)
   (seoul 0.594, busan 0.393, tokyo 0.618, osaka 0.367, taipei 0.505)
 - what it means: 점수의 큰 차이가 없는 것을 보아 큰 영향이 없는 것으로 추측할 수 있었다.
+
+## 2026-11-10 b3 (Track B)
+- changed: b1(ResNet18, 224, 스타터 사진)에서 두 가지를 바꿨다.
+  - 모델: EfficientNet-B3, 사진 크기 320 (10.66M 파라미터, 1.96 GMACs), 8에포크,
+    도시 균등하게 뽑기, 좌우 뒤집기 없음
+  - 사진: 스타터 학습 사진에 Mapillary에서 직접 모은 거리 사진 1,894장(`data/mine`)을 더했다
+    (46,151장).
+  - Colab에서 학습했다. 같은 설정이 두 번 돌았다 (코드만 바뀌어 다시 실행됨).
+- why: 같은 나라의 도시를 구별하는 데 거리 모습이 도움이 될 것 같아서, 양질의 데이터를 모으기
+  위해 직접 수집했다. 또 더 높은 성능의 모델을 사용하는 것이 도움이 될 것 같았다.
+- validation: 0.5901, 0.591 (before: b1 0.4832)
+  (두 번째: seoul 0.609, busan 0.566, tokyo 0.610, osaka 0.506, taipei 0.663)
+- what it means: 점수가 크게 오른 것을 보고 좋은 데이터를 수집하는 것이 중요하다고 생각했다.
